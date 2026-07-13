@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# ghx — gh-shaped forge gateway. Routes an allowlisted verb set to the
+# gh CLI (GitHub remotes) or the Forgejo REST API (everything else).
+#
+# Exit codes:
+#   0  success (github backend: gh's own exit code is passed through)
+#   3  not a ghx command (unimplemented verb or flag)
+#   4  host detection failed (no usable git remote)
+#   5  verb unsupported on the target Forgejo version, or version
+#      probe failed after an API error
+#   1  upstream/API error surfaced from the backend
+set -euo pipefail
+
+GHX_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# shellcheck source=../lib/table.sh
+source "$GHX_ROOT/lib/table.sh"
+
+# Print the implemented-verb list, one usage line each.
+# Returns: exit 0.
+ghx_help() {
+    echo "ghx — forge gateway. Implemented verbs:"
+    echo
+    local verb
+    while IFS= read -r verb; do
+        printf '  %s\n' "${GHX_USAGE[$verb]}"
+    done < <(printf '%s\n' "${!GHX_USAGE[@]}" | sort)
+}
+
+main() {
+    if [[ "${1:-}" == "--help" || "${1:-}" == "-h" || $# -eq 0 ]]; then
+        ghx_help
+        exit 0
+    fi
+    exit 3
+}
+
+main "$@"
