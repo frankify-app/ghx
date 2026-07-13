@@ -148,6 +148,54 @@ forgejo_issue_list() {
     forgejo_api GET "repos/$(forgejo_repo_path)/issues?type=issues"
 }
 
+# forgejo_issue_edit <number> <allowlisted flags...>
+# Metadata-only edit. Labels via the label endpoints; assignees and
+# milestone via PATCH on the issue with only those fields.
+# Returns: 0; individual API responses are suppressed except errors.
+# Errors: exit 3 on non-allowlisted flags; API errors per forgejo_api.
+forgejo_issue_edit() {
+    local number=$1
+    ghx_parse_edit_flags "issue edit" "${@:2}"
+    forgejo_apply_edit "$number" "issues/$number"
+}
+
+# forgejo_apply_edit <number> <patch-path-under-repo>
+# Applies parsed EDIT_* globals against the repo's REST endpoints.
+# patch-path is "issues/{n}" for both issues and PRs (Forgejo PATCHes
+# PR metadata through the issue endpoint for labels/assignees/milestone).
+forgejo_apply_edit() {
+    local number=$1 patch_path=$2 repo_path
+    repo_path="$(forgejo_repo_path)"
+    if [[ ${#EDIT_ADD_LABELS[@]} -gt 0 ]]; then
+        forgejo_api POST "repos/$repo_path/issues/$number/labels" \
+            "$(jq -cn --argjson ids "$(forgejo_label_ids "${EDIT_ADD_LABELS[@]}")" '{labels: $ids}')" >/dev/null
+    fi
+    local name id
+    for name in "${EDIT_REMOVE_LABELS[@]}"; do
+        id="$(forgejo_label_ids "$name" | jq -r '.[0]')"
+        forgejo_api DELETE "repos/$repo_path/issues/$number/labels/$id" >/dev/null
+    done
+    if [[ ${#EDIT_ADD_ASSIGNEES[@]} -gt 0 || ${#EDIT_REMOVE_ASSIGNEES[@]} -gt 0 ]]; then
+        # PATCH replaces the assignee list, so merge with the current one.
+        local current merged
+        current="$(forgejo_api GET "repos/$repo_path/issues/$number" | jq -c '[.assignees // [] | .[].login]')"
+        merged="$(jq -cn --argjson cur "$current" \
+            --args '$cur + $ARGS.positional | unique' "${EDIT_ADD_ASSIGNEES[@]}")"
+        if [[ ${#EDIT_REMOVE_ASSIGNEES[@]} -gt 0 ]]; then
+            merged="$(echo "$merged" | jq -c --args '. - $ARGS.positional' "${EDIT_REMOVE_ASSIGNEES[@]}")"
+        fi
+        forgejo_api PATCH "repos/$repo_path/$patch_path" \
+            "$(jq -cn --argjson a "$merged" '{assignees: $a}')" >/dev/null
+    fi
+    if [[ "$EDIT_REMOVE_MILESTONE" == "true" ]]; then
+        # Milestone 0 clears the field on Forgejo.
+        forgejo_api PATCH "repos/$repo_path/$patch_path" '{"milestone":0}' >/dev/null
+    elif [[ -n "$EDIT_MILESTONE" ]]; then
+        forgejo_api PATCH "repos/$repo_path/$patch_path" \
+            "$(jq -cn --argjson id "$(forgejo_milestone_id "$EDIT_MILESTONE")" '{milestone: $id}')" >/dev/null
+    fi
+}
+
 # forgejo_issue_comment <number> --body <text>
 # Adds a comment. Returns: created comment JSON.
 # Errors: missing --body -> exit 3.

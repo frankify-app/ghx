@@ -20,6 +20,8 @@ source "$GHX_ROOT/lib/log.sh"
 source "$GHX_ROOT/lib/dispatch.sh"
 # shellcheck source=../lib/github.sh
 source "$GHX_ROOT/lib/github.sh"
+# shellcheck source=../lib/edit.sh
+source "$GHX_ROOT/lib/edit.sh"
 # shellcheck source=../lib/forgejo.sh
 source "$GHX_ROOT/lib/forgejo.sh"
 
