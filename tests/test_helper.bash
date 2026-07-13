@@ -46,6 +46,12 @@ make_mock_curl() {
 #!/usr/bin/env bash
 printf '%s\n' "$@" >> "${MOCK_CURL_ARGV_FILE}"
 printf '%s\n---CALL---\n' "" >> "${MOCK_CURL_ARGV_FILE}"
+# Optional per-URL scripting: MOCK_CURL_SCRIPT may inspect "$@" (the URL
+# is the last arg) and override MOCK_CURL_STDOUT / MOCK_CURL_HTTP_CODE,
+# or exit non-zero to simulate a transport failure.
+if [ -n "${MOCK_CURL_SCRIPT:-}" ]; then
+    source "${MOCK_CURL_SCRIPT}"
+fi
 echo "${MOCK_CURL_STDOUT:-{\}}"
 echo "${MOCK_CURL_HTTP_CODE:-200}"
 EOF
