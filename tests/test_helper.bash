@@ -32,6 +32,24 @@ EOF
     export PATH="$TEST_TMP/bin:$PATH"
 }
 
+# Install a mock `curl` on PATH that records the full argv (one arg per
+# line) to $TEST_TMP/curl.argv (appending, so multi-call verbs record all
+# calls), prints $MOCK_CURL_STDOUT, and writes "$MOCK_CURL_HTTP_CODE"
+# (default 200) where ghx asks for the status code.
+make_mock_curl() {
+    mkdir -p "$TEST_TMP/bin"
+    cat > "$TEST_TMP/bin/curl" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" >> "${MOCK_CURL_ARGV_FILE}"
+printf '%s\n---CALL---\n' "" >> "${MOCK_CURL_ARGV_FILE}"
+echo "${MOCK_CURL_STDOUT:-{\}}"
+echo "${MOCK_CURL_HTTP_CODE:-200}"
+EOF
+    chmod +x "$TEST_TMP/bin/curl"
+    export MOCK_CURL_ARGV_FILE="$TEST_TMP/curl.argv"
+    export PATH="$TEST_TMP/bin:$PATH"
+}
+
 # Create a git repo fixture with the given remote URL (or none if omitted)
 # and cd into it. Returns: prints nothing; cwd is the new repo.
 make_repo() {
