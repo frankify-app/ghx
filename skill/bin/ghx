@@ -26,6 +26,8 @@ source "$GHX_ROOT/lib/review.sh"
 source "$GHX_ROOT/lib/edit.sh"
 # shellcheck source=../lib/forgejo.sh
 source "$GHX_ROOT/lib/forgejo.sh"
+# shellcheck source=../lib/version_gate.sh
+source "$GHX_ROOT/lib/version_gate.sh"
 
 # Print the implemented-verb list, one usage line each.
 # Returns: exit 0.

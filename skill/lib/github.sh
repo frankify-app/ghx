@@ -62,6 +62,10 @@ github_pr_review() {
     ghx_review_payload line | gh api -X POST "repos/$repo_path/pulls/$number/reviews" --input=-
 }
 
+# github_run_list / _view — plain forwards for CI-read.
+github_run_list() { gh run list "$@"; }
+github_run_view() { gh run view "$@"; }
+
 # github_pr_edit <number> <allowlisted flags...>
 # Same allowlist as issue edit plus reviewer-request flags.
 github_pr_edit() {
