@@ -1,5 +1,17 @@
 # Backend detection and verb dispatch.
 
+# ghx_reject_flag <verb> <flag>
+# Rejects a flag/argument outside the verb's allowlist. This is the same
+# boundary as an unimplemented verb: exit 3, logged, usage shown.
+# Returns: never — exits 3.
+ghx_reject_flag() {
+    local verb=$1 flag=$2
+    echo "ghx: not a ghx command: '$flag' is not part of '$verb'" >&2
+    echo "usage: ${GHX_USAGE[$verb]:-}" >&2
+    ghx_log not-a-ghx-command 3 - "$verb" "${GHX_ARGV[@]}"
+    exit 3
+}
+
 # ghx_detect_backend
 # Detects the forge backend from the git remote "origin".
 # Returns (stdout): "github", or "forgejo <https-base-url>".
