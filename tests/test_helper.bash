@@ -17,6 +17,21 @@ common_setup() {
     mkdir -p "$HOME"
 }
 
+# Install a mock `gh` on PATH that records its argv (one arg per line)
+# to $TEST_TMP/gh.argv, prints $MOCK_GH_STDOUT, exits $MOCK_GH_EXIT (default 0).
+make_mock_gh() {
+    mkdir -p "$TEST_TMP/bin"
+    cat > "$TEST_TMP/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "${MOCK_GH_ARGV_FILE}"
+echo "${MOCK_GH_STDOUT:-}"
+exit "${MOCK_GH_EXIT:-0}"
+EOF
+    chmod +x "$TEST_TMP/bin/gh"
+    export MOCK_GH_ARGV_FILE="$TEST_TMP/gh.argv"
+    export PATH="$TEST_TMP/bin:$PATH"
+}
+
 # Create a git repo fixture with the given remote URL (or none if omitted)
 # and cd into it. Returns: prints nothing; cwd is the new repo.
 make_repo() {
