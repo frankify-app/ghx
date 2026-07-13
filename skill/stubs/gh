@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Shadow stub: guardrail for cooperative agents, not a security boundary.
+set -euo pipefail
+STUB_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# shellcheck source=../lib/log.sh
+source "$STUB_ROOT/lib/log.sh"
+# shellcheck source=../lib/stub.sh
+source "$STUB_ROOT/lib/stub.sh"
+ghx_stub_main gh "$@"

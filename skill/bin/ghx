@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+# ghx — gh-shaped forge gateway. Routes an allowlisted verb set to the
+# gh CLI (GitHub remotes) or the Forgejo REST API (everything else).
+#
+# Exit codes:
+#   0  success (github backend: gh's own exit code is passed through)
+#   3  not a ghx command (unimplemented verb or flag)
+#   4  host detection failed (no usable git remote)
+#   5  verb unsupported on the target Forgejo version, or version
+#      probe failed after an API error
+#   1  upstream/API error surfaced from the backend
+set -euo pipefail
+
+GHX_ROOT="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)"
+# shellcheck source=../lib/table.sh
+source "$GHX_ROOT/lib/table.sh"
+# shellcheck source=../lib/log.sh
+source "$GHX_ROOT/lib/log.sh"
+# shellcheck source=../lib/dispatch.sh
+source "$GHX_ROOT/lib/dispatch.sh"
+# shellcheck source=../lib/github.sh
+source "$GHX_ROOT/lib/github.sh"
+# shellcheck source=../lib/review.sh
+source "$GHX_ROOT/lib/review.sh"
+# shellcheck source=../lib/edit.sh
+source "$GHX_ROOT/lib/edit.sh"
+# shellcheck source=../lib/forgejo.sh
+source "$GHX_ROOT/lib/forgejo.sh"
+# shellcheck source=../lib/version_gate.sh
+source "$GHX_ROOT/lib/version_gate.sh"
+
+# Print the implemented-verb list, one usage line each.
+# Returns: exit 0.
+ghx_help() {
+    echo "ghx — forge gateway. Implemented verbs:"
+    echo
+    local verb
+    while IFS= read -r verb; do
+        printf '  %s\n' "${GHX_USAGE[$verb]}"
+    done < <(printf '%s\n' "${!GHX_USAGE[@]}" | sort)
+}
+
+main() {
+    if [[ "${1:-}" == "--help" || "${1:-}" == "-h" || $# -eq 0 ]]; then
+        ghx_help
+        exit 0
+    fi
+    GHX_ARGV=("$@")
+    local verb="${1:-} ${2:-}"
+    if [[ -z "${GHX_USAGE[$verb]:-}" ]]; then
+        echo "ghx: not a ghx command: $*" >&2
+        ghx_log not-a-ghx-command 3 - - "$@"
+        exit 3
+    fi
+    shift 2
+    ghx_dispatch "$verb" "$@"
+}
+
+main "$@"
