@@ -50,6 +50,9 @@ github_pr_comment() { gh pr comment "$@"; }
 github_pr_checks() { gh pr checks "$@"; }
 github_pr_status() { gh pr status "$@"; }
 
+# DECISION:NOVEL — inline review comments have no gh-CLI flag surface,
+# so this is the one github verb that goes through `gh api` with a
+# ghx-assembled payload (per the issue's spec).
 # github_pr_review <number> [--body s] [--code-comment path:line:text]...
 # Submits a commenting review with inline comments via the reviews API
 # (gh pr review has no inline-comment flags, so ghx builds the payload

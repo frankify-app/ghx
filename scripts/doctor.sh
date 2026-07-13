@@ -125,6 +125,25 @@ for tool in "${REQUIRED_TOOLS[@]}"; do
     fi
 done
 
+# ghx gateway checks: ghx always; backend deps per the repo's forge host
+# (github remote -> gh; anything else -> curl+jq+token for Forgejo REST).
+echo
+echo "ghx gateway:"
+warn_tool ghx "not on PATH — agents cannot reach the forge gateway"
+remote_url="$(git remote get-url origin 2>/dev/null || true)"
+if [[ "$remote_url" == *github.com* ]]; then
+    warn_tool gh "github remote detected but gh is missing"
+elif [[ -n "$remote_url" ]]; then
+    warn_tool curl "forgejo remote detected but curl is missing"
+    warn_tool jq "forgejo remote detected but jq is missing"
+    if [[ -n "${GHX_FORGEJO_TOKEN:-}" ]]; then
+        echo "✓ GHX_FORGEJO_TOKEN"
+        pass=$((pass + 1))
+    else
+        echo "⚠ GHX_FORGEJO_TOKEN — not set; forgejo backend calls will fail"
+    fi
+fi
+
 
 
 echo

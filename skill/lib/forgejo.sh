@@ -91,6 +91,9 @@ forgejo_issue_create() {
     forgejo_api POST "repos/$(forgejo_repo_path)/issues" "$payload"
 }
 
+# DECISION:SCOPE — Forgejo's issue endpoints take label/milestone IDs,
+# not names; ghx resolves names via an extra GET so the agent-facing
+# interface stays name-based and identical to gh's.
 # forgejo_label_ids <name>...
 # Resolves label names to their numeric IDs via GET repos/{o}/{r}/labels.
 # Returns (stdout): JSON array of IDs.

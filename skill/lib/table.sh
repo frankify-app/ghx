@@ -28,6 +28,10 @@ declare -A GHX_USAGE=(
     ["run view"]="ghx run view <run-id>"
 )
 
+# DECISION:SCOPE — Actions run endpoints (repos/{o}/{r}/actions/runs[/{id}])
+# are pinned to the 15.0.2 support floor but were verified against API
+# docs only, not a live 15.0.2 instance; the check-on-failure gate keeps
+# a shape mismatch loud instead of silent.
 declare -A GHX_MIN_FORGEJO=(
     ["run list"]="15.0.2"
     ["run view"]="15.0.2"
