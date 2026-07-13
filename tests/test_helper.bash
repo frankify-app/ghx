@@ -24,6 +24,10 @@ make_mock_gh() {
     cat > "$TEST_TMP/bin/gh" <<'EOF'
 #!/usr/bin/env bash
 printf '%s\n' "$@" > "${MOCK_GH_ARGV_FILE}"
+# Record piped stdin (e.g. gh api --input -) alongside the argv.
+if [ -p /dev/stdin ]; then
+    cat >> "${MOCK_GH_ARGV_FILE}"
+fi
 echo "${MOCK_GH_STDOUT:-}"
 exit "${MOCK_GH_EXIT:-0}"
 EOF

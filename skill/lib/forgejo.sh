@@ -196,6 +196,115 @@ forgejo_apply_edit() {
     fi
 }
 
+# forgejo_pr_create [--title t] [--body b] [--base br] [--head br] [--closes n]
+# Creates a PR via POST repos/{o}/{r}/pulls; --closes prepends the
+# closing keyword to the body (same behavior as the github backend).
+forgejo_pr_create() {
+    local title="" body="" base="" head="" closes=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --title) title=$2; shift 2 ;;
+            --body) body=$2; shift 2 ;;
+            --base) base=$2; shift 2 ;;
+            --head) head=$2; shift 2 ;;
+            --closes) closes=$2; shift 2 ;;
+            *) ghx_reject_flag "pr create" "$1" ;;
+        esac
+    done
+    if [[ -n "$closes" ]]; then
+        body="$(ghx_inject_closes "$body" "$closes")"
+    fi
+    local payload
+    payload="$(jq -cn --arg title "$title" --arg body "$body" --arg base "$base" --arg head "$head" \
+        '{title: $title, body: $body}
+         + (if $base != "" then {base: $base} else {} end)
+         + (if $head != "" then {head: $head} else {} end)')"
+    forgejo_api POST "repos/$(forgejo_repo_path)/pulls" "$payload"
+}
+
+# forgejo_pr_view <number> [--comments]
+# Returns: the PR JSON; with --comments, PR-level comments and reviews
+# (which carry the inline code comments) follow.
+forgejo_pr_view() {
+    local number=$1
+    shift
+    forgejo_api GET "repos/$(forgejo_repo_path)/pulls/$number"
+    if [[ "${1:-}" == "--comments" ]]; then
+        forgejo_api GET "repos/$(forgejo_repo_path)/issues/$number/comments"
+        forgejo_api GET "repos/$(forgejo_repo_path)/pulls/$number/reviews"
+    elif [[ $# -gt 0 ]]; then
+        ghx_reject_flag "pr view" "$1"
+    fi
+}
+
+# forgejo_pr_list
+# Returns: open PRs JSON.
+forgejo_pr_list() {
+    if [[ $# -gt 0 ]]; then
+        ghx_reject_flag "pr list" "$1"
+    fi
+    forgejo_api GET "repos/$(forgejo_repo_path)/pulls"
+}
+
+# forgejo_pr_comment <number> --body <text>
+# PR-level comments live on the issue-comments endpoint in Forgejo.
+forgejo_pr_comment() {
+    forgejo_issue_comment "$@"
+}
+
+# forgejo_pr_edit <number> <allowlisted flags...>
+# Metadata-only edit plus reviewer requests via the review-requests
+# endpoint (POST to add, DELETE to remove).
+forgejo_pr_edit() {
+    local number=$1
+    ghx_parse_edit_flags "pr edit" "${@:2}"
+    forgejo_apply_edit "$number" "pulls/$number"
+    local repo_path
+    repo_path="$(forgejo_repo_path)"
+    if [[ ${#EDIT_ADD_REVIEWERS[@]} -gt 0 ]]; then
+        forgejo_api POST "repos/$repo_path/pulls/$number/requested_reviewers" \
+            "$(jq -cn --args '{reviewers: $ARGS.positional}' "${EDIT_ADD_REVIEWERS[@]}")" >/dev/null
+    fi
+    if [[ ${#EDIT_REMOVE_REVIEWERS[@]} -gt 0 ]]; then
+        forgejo_api DELETE "repos/$repo_path/pulls/$number/requested_reviewers" \
+            "$(jq -cn --args '{reviewers: $ARGS.positional}' "${EDIT_REMOVE_REVIEWERS[@]}")" >/dev/null
+    fi
+}
+
+# forgejo_pr_review <number> [--body s] [--code-comment path:line:text]...
+# Submits a commenting review; inline comments use Forgejo's
+# new_position field for the line number.
+forgejo_pr_review() {
+    local number=$1
+    ghx_parse_review_args "${@:2}"
+    forgejo_api POST "repos/$(forgejo_repo_path)/pulls/$number/reviews" \
+        "$(ghx_review_payload new_position)"
+}
+
+# forgejo_pr_checks <number>
+# CI rollup: resolves the PR's head sha, then fetches the combined
+# commit status.
+forgejo_pr_checks() {
+    local number=$1 sha
+    sha="$(forgejo_api GET "repos/$(forgejo_repo_path)/pulls/$number" | jq -r '.head.sha')"
+    forgejo_api GET "repos/$(forgejo_repo_path)/commits/$sha/status"
+}
+
+# forgejo_pr_status
+# CI rollup for the PR belonging to the current branch.
+# Errors: exit 1 when no open PR has the current branch as head.
+forgejo_pr_status() {
+    local branch number
+    branch="$(git rev-parse --abbrev-ref HEAD)"
+    number="$(forgejo_api GET "repos/$(forgejo_repo_path)/pulls" \
+        | jq -r --arg b "$branch" '.[] | select(.head.ref == $b) | .number' | head -1)"
+    if [[ -z "$number" ]]; then
+        echo "ghx: no open PR found for branch=$branch" >&2
+        exit 1
+    fi
+    forgejo_pr_checks "$number"
+}
+
 # forgejo_issue_comment <number> --body <text>
 # Adds a comment. Returns: created comment JSON.
 # Errors: missing --body -> exit 3.
