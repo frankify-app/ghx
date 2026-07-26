@@ -1,12 +1,17 @@
 # Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
-_commit: v1.1.0
+_commit: v3.0.0
 _src_path: https://github.com/frankify-app/agentic-engineering-template.git
+agentic_disambiguate_roots: ''
+agentic_disambiguate_version: 0.2.0
 agentic_forge: github
+agentic_language: en
 agentic_precommit: prek
 agentic_project_description: A thin gh-shaped command-line gateway that routes an
     allowlisted set of forge verbs to GitHub (gh) or the Forgejo REST API, so agents
     use one interface regardless of host.
+agentic_project_kind: code
 agentic_project_name: ghx
 agentic_project_slug: ghx
 agentic_repo_owner: frankify-app
+agentic_subtemplate: template
 agentic_tracker_cli: gh
