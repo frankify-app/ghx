@@ -11,7 +11,7 @@
       "source": "frankify-app/skills",
       "sourceType": "github",
       "skillPath": "original/documenting-decisions/SKILL.md",
-      "computedHash": "6de79ad3f21409d7215bb8fb6013357fd53b46054091faf3dddb7d3573b2b157"
+      "computedHash": "b71f6fc8250903091477b16e0ca976b20d4d65fd7d12acd7d5025b9d4bddfe08"
     },
     "domain-modeling": {
       "source": "frankify-app/skills",
@@ -35,7 +35,7 @@
       "source": "frankify-app/skills",
       "sourceType": "github",
       "skillPath": "derived/grilling/SKILL.md",
-      "computedHash": "82c8da67d4ec62ded3a4b3823b0e4678d93a0acfc22ac41180cb1b4a5f336872"
+      "computedHash": "1ca262bd5043cedbd75fdcaa0dc339680c11d9d382416c2bf48ace0c2b3caa42"
     },
     "requesting-code-review": {
       "source": "obra/superpowers",
@@ -47,7 +47,7 @@
       "source": "frankify-app/skills",
       "sourceType": "github",
       "skillPath": "derived/tdd/SKILL.md",
-      "computedHash": "b663ec89bd4d0babc7572eb39ce21fe56a95c6da9d74149a17ce93b7c4906253"
+      "computedHash": "d77f0ecda1ec673c16f342a2e16b6ac3388d1004908e4352b4f57cffe701aa97"
     },
     "to-spec": {
       "source": "frankify-app/skills",
